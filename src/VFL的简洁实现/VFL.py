@@ -291,9 +291,9 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
 
 
 config = {
-    'n_iter': 10,
+    'n_iter': 40,
     'lambda': 10,
-    'lr': 0.05,
+    'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
     'B_idx': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
 }
