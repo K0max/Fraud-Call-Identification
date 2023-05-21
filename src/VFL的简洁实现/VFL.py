@@ -289,9 +289,15 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
     print("All process done.")
     
     ## 利⽤训练好的模型参数，带⼊到测试集验证计算accuracy
+    ### A做预测
     y_pred = predict_sigmoid(client_A.weights, XA_test, np.zeros_like(XA_test.shape[0]))
     y_accuracy, y_precision, y_recall, y_f1 = calculate_metrics(y_test, y_pred)
-    print(f"y_accuracy:{y_accuracy}, y_precision:{y_precision}, y_recall:{y_recall}, y_f1:{y_f1}")
+    print(f"yA_accuracy:{y_accuracy}, yA_precision:{y_precision}, yA_recall:{y_recall}, yA_f1:{y_f1}")
+    
+    ### B做预测
+    y_pred = predict_sigmoid(client_B.weights, XB_test, np.zeros_like(XB_test.shape[0]))
+    y_accuracy, y_precision, y_recall, y_f1 = calculate_metrics(y_test, y_pred)
+    print(f"yB_accuracy:{y_accuracy}, yB_precision:{y_precision}, yB_recall:{y_recall}, yB_f1:{y_f1}")
     return True
 
 
