@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 class Client:
     def __init__(self, config):
@@ -286,12 +287,40 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
         client_A.task_3()
         client_B.task_3()
     print("All process done.")
+    
+    ## 利⽤训练好的模型参数，带⼊到测试集验证计算accuracy
+    y_pred = predict_sigmoid(client_A.weights, XA_test, np.zeros_like(XA_test.shape[0]))
+    y_accuracy, y_precision, y_recall, y_f1 = calculate_metrics(y_test, y_pred)
+    print(f"y_accuracy:{y_accuracy}, y_precision:{y_precision}, y_recall:{y_recall}, y_f1:{y_f1}")
     return True
 
 
+# sigmoid
+def predict_sigmoid(weights, X_test, b):
+    z = np.dot(weights, X_test.T) + b
+    y_pred = 1/(1+np.exp(-z))
+    y_pred[y_pred > 0.5] = 1
+    y_pred[y_pred <= 0.5]= 0
+    return y_pred
+
+
+# 计算accuracy...
+def calculate_metrics(y_true, y_pred):
+    """
+    Calculate accuracy, precision, recall and F1 score
+    :param y_true: true labels
+    :param y_pred: predicted labels
+    :return: accuracy, precision, recall, F1 score
+    """
+    
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred)
+    return accuracy, precision, recall, f1
 
 config = {
-    'n_iter': 40,
+    'n_iter': 1,
     'lambda': 10,
     'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
