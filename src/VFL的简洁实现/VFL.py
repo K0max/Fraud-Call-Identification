@@ -303,12 +303,11 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
         
     print("All process done.")
     
-    loss_acc_fig(client_C.loss, accuracy_A)
-    loss_acc_fig(client_C.loss, accuracy_B)
+    loss_acc_fig(client_C.loss, accuracy_A, client_C.loss, accuracy_B)
     
     return True
 
-
+pred1,pred2=[],[]
 # sigmoid
 def predict_sigmoid(weights, X_test, b):
     z = np.dot(weights, X_test.T) + b
@@ -334,20 +333,31 @@ def calculate_metrics(y_true, y_pred):
 
 
 ## 绘制随着eposh轮次增加，loss和accuracy的变化曲线
-def loss_acc_fig(loss, accuracy):
-    x=[i+1 for i in range(len(loss))]
-    l1=plt.plot(x,loss,'r--',label='loss')
-    l2=plt.plot(x,accuracy,'g--',label='accuracy')
-    plt.plot(x,loss,'ro-',x,accuracy,'g+-')
+def loss_acc_fig(loss_A, accuracy_A, loss_B, accuracy_B):
+    fig = plt.figure(figsize=(12, 6))
+    x=[i+1 for i in range(len(loss_A))]
+    plt.subplot(1, 2, 1)
+    l1=plt.plot(x,loss_A,'r--',label='loss_A')
+    l2=plt.plot(x,accuracy_A,'g--',label='accuracy_A')
+    plt.plot(x,loss_A,'ro-',x,accuracy_A,'g+-')
     plt.title('Training and validation accuracy')
     plt.xlabel('n_iter')
-    plt.ylabel('loss/accuracy')
+    plt.ylabel('loss_A/accuracy_A')
+    plt.legend()
+    
+    plt.subplot(1, 2, 2)
+    l3=plt.plot(x,loss_B,'r--',label='loss_B')
+    l4=plt.plot(x,accuracy_B,'g--',label='accuracy_B')
+    plt.plot(x,loss_B,'ro-',x,accuracy_B,'g+-')
+    plt.title('Training and validation accuracy')
+    plt.xlabel('n_iter')
+    plt.ylabel('loss_B/accuracy_B')
     plt.legend()
     plt.show()
     
 
 config = {
-    'n_iter': 2,
+    'n_iter': 3,
     'lambda': 10,
     'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
