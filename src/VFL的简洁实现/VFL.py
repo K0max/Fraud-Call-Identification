@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 from phe import paillier
 import pandas as pd
 from sklearn import datasets
@@ -277,6 +278,7 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
     client_C.connect("B", client_B)
     
     ## 训练
+    accuracy_A, accuracy_B = [],[]
     for i in range(config['n_iter']):
         client_C.task_1("A", "B")
         client_A.task_1("B")
@@ -286,18 +288,24 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
         client_C.task_2("A", "B")
         client_A.task_3()
         client_B.task_3()
+        
+        ### A做预测
+        yA_pred = predict_sigmoid(client_A.weights, XA_test, np.zeros_like(XA_test.shape[0]))
+        yA_accuracy, yA_precision, yA_recall, yA_f1 = calculate_metrics(y_test, yA_pred)
+        print(f"yA_accuracy:{yA_accuracy}, yA_precision:{yA_precision}, yA_recall:{yA_recall}, yA_f1:{yA_f1}")
+        accuracy_A.append(yA_accuracy)
+        
+        ### B做预测
+        yB_pred = predict_sigmoid(client_B.weights, XB_test, np.zeros_like(XB_test.shape[0]))
+        yB_accuracy, yB_precision, yB_recall, yB_f1 = calculate_metrics(y_test, yB_pred)
+        print(f"yB_accuracy:{yB_accuracy}, yB_precision:{yB_precision}, yB_recall:{yB_recall}, yB_f1:{yB_f1}")
+        accuracy_B.append(yB_accuracy)
+        
     print("All process done.")
     
-    ## 利⽤训练好的模型参数，带⼊到测试集验证计算accuracy
-    ### A做预测
-    y_pred = predict_sigmoid(client_A.weights, XA_test, np.zeros_like(XA_test.shape[0]))
-    y_accuracy, y_precision, y_recall, y_f1 = calculate_metrics(y_test, y_pred)
-    print(f"yA_accuracy:{y_accuracy}, yA_precision:{y_precision}, yA_recall:{y_recall}, yA_f1:{y_f1}")
+    loss_acc_fig(client_C.loss, accuracy_A)
+    loss_acc_fig(client_C.loss, accuracy_B)
     
-    ### B做预测
-    y_pred = predict_sigmoid(client_B.weights, XB_test, np.zeros_like(XB_test.shape[0]))
-    y_accuracy, y_precision, y_recall, y_f1 = calculate_metrics(y_test, y_pred)
-    print(f"yB_accuracy:{y_accuracy}, yB_precision:{y_precision}, yB_recall:{y_recall}, yB_f1:{y_f1}")
     return True
 
 
@@ -318,15 +326,28 @@ def calculate_metrics(y_true, y_pred):
     :param y_pred: predicted labels
     :return: accuracy, precision, recall, F1 score
     """
-    
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
     recall = recall_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred)
     return accuracy, precision, recall, f1
 
+
+## 绘制随着eposh轮次增加，loss和accuracy的变化曲线
+def loss_acc_fig(loss, accuracy):
+    x=[i+1 for i in range(len(loss))]
+    l1=plt.plot(x,loss,'r--',label='loss')
+    l2=plt.plot(x,accuracy,'g--',label='accuracy')
+    plt.plot(x,loss,'ro-',x,accuracy,'g+-')
+    plt.title('Training and validation accuracy')
+    plt.xlabel('n_iter')
+    plt.ylabel('loss/accuracy')
+    plt.legend()
+    plt.show()
+    
+
 config = {
-    'n_iter': 1,
+    'n_iter': 2,
     'lambda': 10,
     'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
