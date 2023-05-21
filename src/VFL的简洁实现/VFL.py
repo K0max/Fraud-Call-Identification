@@ -33,7 +33,7 @@ class ClientA(Client):
     def __init__(self, X, config):
         super().__init__(config)
         self.X = X
-        self.weights = np.zeros(X.shape[1])
+        self.weights = np.random.normal(loc=0,scale=1.0/15,size=X.shape[1])#
         
     def compute_z_a(self):
         z_a = np.dot(self.X, self.weights)
@@ -92,7 +92,7 @@ class ClientB(Client):
         super().__init__(config)
         self.X = X
         self.y = y
-        self.weights = np.zeros(X.shape[1])
+        self.weights = np.random.normal(loc=0,scale=1.0/15,size=X.shape[1])
         self.data = {}
         
     def compute_u_b(self):
@@ -357,8 +357,8 @@ def loss_acc_fig(loss_A, accuracy_A, loss_B, accuracy_B):
     
 
 config = {
-    'n_iter': 3,
-    'lambda': 10,
+    'n_iter': 30,
+    'lambda': 2,
     'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
     'B_idx': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
