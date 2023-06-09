@@ -2,13 +2,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from phe import paillier
-import pandas as pd
-from sklearn import datasets
-from sklearn.datasets import load_diabetes
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 class Client:
@@ -100,7 +96,9 @@ class ClientB(Client):
         num_flips = int(flip_prob * len(self.y))
         flip_indices = np.random.choice(len(self.y), num_flips, replace=False)
         self.y[flip_indices] = 1 - self.y[flip_indices]
-        
+    
+
+
     def compute_u_b(self):
         z_b = np.dot(self.X, self.weights)
         u_b = 0.25 * z_b - self.y + 0.5
@@ -112,6 +110,13 @@ class ClientB(Client):
 
     def update_weight(self, dJ_b):
         self.weights = self.weights - self.config["lr"] * dJ_b / len(self.X)
+    
+    def task_0(self):
+        try:
+            self.flip_labels()
+            print("Random process of flipping labels is done.")
+        except Exception as e:
+            print("Wrong 0 in B: %s" % e)
         
     ## B: step2
     def task_1(self, client_A_name):
@@ -122,7 +127,6 @@ class ClientB(Client):
         except Exception as e:
             print("B step 1 exception: %s" % e)
         try:
-            self.flip_labels()
             z_b, u_b = self.compute_u_b()
             encrypted_u_b = np.asarray([public_key.encrypt(x) for x in u_b])
             dt.update({"encrypted_u_b": encrypted_u_b})
@@ -167,6 +171,32 @@ class ClientB(Client):
             print("A step 3 exception: %s" % e)
         print(f"B weight: {self.weights}")
         return
+
+    def task_flipback(self,client_C_name):
+        
+        try:
+            dt = self.data
+            assert "public_key" in dt.keys(), "Error: 'public_key' from C in step 1 not successfully received."
+            public_key = dt['public_key']
+        except Exception as e:
+            print("B step 1 exception: %s" % e)
+        try:
+            z_b, u_b = self.compute_u_b()
+            yB_pred = predict_sigmoid(client_B.weights, XB_test, np.zeros_like(XB_test.shape[0]))
+            #y_dist记为yB_pred和真实的y之间的差距，选出其中差距最大的前10%的样本，将其标签翻转
+            y_dist = np.abs(yB_pred - self.y)
+            flip_indices = np.argsort(y_dist)[-int(0.1*len(y_dist)):]
+            self.y[flip_indices] = 1 - self.y[flip_indices]
+
+
+            encrypted_u_b = np.asarray([public_key.encrypt(x) for x in u_b])
+            dt.update({"encrypted_u_b": encrypted_u_b})
+            dt.update({"z_b": z_b})
+        except Exception as e:
+            print("Wrong 1 in B: %s" % e)
+
+        data_to_A= {"encrypted_u_b": encrypted_u_b}
+        self.send_data(data_to_A, self.other_client[client_A_name])
 
 class ClientC(Client):
     """
@@ -286,12 +316,17 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
     
     ## 训练
     accuracy_A, accuracy_B = [],[]
-    for i in range(config['n_iter']):
+    client_B.task_0()
+    for i in range(1,config['n_iter']+1):
+        print(f"**********epoch{i}**********")
         client_C.task_1("A", "B")
         client_A.task_1("B")
-        client_B.task_1("A")
+        client_B.task_1("A") 
         client_A.task_2("C")
-        client_B.task_2("C")
+        if i % 5 == 0 : 
+            client_B.task_flipback("C")
+        else :
+            client_B.task_2("C")
         client_C.task_2("A", "B")
         client_A.task_3()
         client_B.task_3()
@@ -369,7 +404,7 @@ config = {
     'lr': 0.005,
     'A_idx': [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
     'B_idx': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    'epsilon': 3.0,
+    'epsilon': 8.0,
 }
 
 X, y, X_test, y_test = load_data()
