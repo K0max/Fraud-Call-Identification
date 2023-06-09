@@ -172,7 +172,7 @@ class ClientB(Client):
         print(f"B weight: {self.weights}")
         return
 
-    def task_flipback(self,client_C_name):
+    def task_flipback(self,client_A_name):
         
         try:
             dt = self.data
@@ -181,14 +181,13 @@ class ClientB(Client):
         except Exception as e:
             print("B step 1 exception: %s" % e)
         try:
-            z_b, u_b = self.compute_u_b()
-            yB_pred = predict_sigmoid(client_B.weights, XB_test, np.zeros_like(XB_test.shape[0]))
-            #y_dist记为yB_pred和真实的y之间的差距，选出其中差距最大的前10%的样本，将其标签翻转
+            yB_pred = predict_sigmoid(self.weights, self.X, np.zeros_like(self.X.shape[0]))
+            #y_dist记为yB_pred和真实的y之间的差距，选出其中差距最大的前1%的样本，将其标签翻转
             y_dist = np.abs(yB_pred - self.y)
-            flip_indices = np.argsort(y_dist)[-int(0.1*len(y_dist)):]
+            flip_indices = np.argsort(y_dist)[-int(0.01*len(y_dist)):]
             self.y[flip_indices] = 1 - self.y[flip_indices]
 
-
+            z_b, u_b = self.compute_u_b()
             encrypted_u_b = np.asarray([public_key.encrypt(x) for x in u_b])
             dt.update({"encrypted_u_b": encrypted_u_b})
             dt.update({"z_b": z_b})
@@ -321,12 +320,12 @@ def vertical_logistic_regression(X, y, X_test, y_test, config):
         print(f"**********epoch{i}**********")
         client_C.task_1("A", "B")
         client_A.task_1("B")
-        client_B.task_1("A") 
+        if i%5 == 0:
+            client_B.task_flipback("A")
+        else:
+            client_B.task_1("A") 
         client_A.task_2("C")
-        if i % 5 == 0 : 
-            client_B.task_flipback("C")
-        else :
-            client_B.task_2("C")
+        client_B.task_2("C")
         client_C.task_2("A", "B")
         client_A.task_3()
         client_B.task_3()
